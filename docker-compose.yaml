@@ -1,0 +1,33 @@
+services:
+  php:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: omnicore_php
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      - postgres
+    networks:
+      - omnicore_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: omnicore_postgres
+    environment:
+      POSTGRES_DB: omnicore_dev
+      POSTGRES_USER: omnicore_user
+      POSTGRES_PASSWORD: omnicore_password
+    ports:
+      - "5415:5432"
+    volumes:
+      - pgdata:/var/data/postgres
+    networks:
+      - omnicore_network
+
+volumes:
+  pgdata:
+
+networks:
+  omnicore_network:
+    driver: bridge
