@@ -20,6 +20,11 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Entity'
                 prefix: 'OmniCore\Entity'
                 alias: OmniCore
+        # Register a global multi-tenancy filter
+        filters:
+            tenant_filter:
+                class: OmniCore\Filter\TenantFilter
+                enabled: true
 
 when@test:
     doctrine:
