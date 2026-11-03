@@ -1,0 +1,6 @@
+framework:
+    rate_limiter:
+        webhook_limiter:
+            policy: 'token_bucket'
+            limit: 5
+            rate: { amount: 5, interval: '1 second' }

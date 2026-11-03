@@ -25,3 +25,7 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    # Связываем класс фабрики с созданным бандлом сервисом webhook_limiter
+    Symfony\Component\RateLimiter\RateLimiterFactory: '@limiter.webhook_limiter'
+    # Связываем класс лимитера с созданным бандлом сервисом webhook_limiter
+    # OmniCore\Bundle\RateLimiterBundle\RateLimiter\WebhookLimiter: '@limiter.webhook_limiter'
