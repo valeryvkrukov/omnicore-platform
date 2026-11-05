@@ -85,7 +85,7 @@ const tenantStore = useTenantStore()
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 p-6 md:p-10 space-y-8 overflow-y-auto">
+    <main class="flex-1 p-6 md:p-10 space-y-8 overflow-y-auto min-w-0">
       <!-- Top status bar -->
       <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#0B0F19]/40 border border-slate-800/60 rounded-xl p-6 backdrop-blur-md relative overflow-hidden group">
         <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"></div>

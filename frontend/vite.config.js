@@ -14,7 +14,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000', // Local port for Symfony API backend
         changeOrigin: true,
-        secure: false
+        secure: false,
+        ws: false
       }
     }
   }

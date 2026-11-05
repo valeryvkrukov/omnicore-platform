@@ -4,6 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: omnicore_php
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend:/var/www/html
     depends_on:

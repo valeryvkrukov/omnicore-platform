@@ -76,26 +76,26 @@ final class CustomerController extends AbstractController
             'tenant_id' => $tenant->getId()->toString()
         ]);
 
-        // Format the result for the front-end graph (for example, to be used with Chart.js)
+        // Инициализируем чистые массивы под оси графика
         $labels = [];
         $values = [];
 
         foreach ($result as $row) {
-            $labels[] = $row['date_label'];
-            $values[] = (int) $row['total_count'];
+            // ИСПОЛЬЗУЕМ КВАДРАТНЫЕ СКОБКИ [] ДЛЯ ДОБАВЛЕНИЯ В КОНЕЦ МАССИВА
+            $labels[] = $row['date_label'] ?? $row['DATE_LABEL'];
+            $values[] = (int) ($row['total_count'] ?? $row['TOTAL_COUNT'] ?? 0);
         }
 
-        // In case of some days have no data, frontend will get blank arrays, or they can be filled with zeros later
         return new JsonResponse([
             'metrics' => [
                 'total_customers' => array_sum($values),
                 'current_plan' => $tenant->getSettings()['plan'] ?? 'free',
-                'rate_limit' => 5 // Current rate limit
+                'rate_limit' => 5
             ],
             'chart' => [
                 'labels' => $labels,
-                'date' => $values
+                'data' => $values // Теперь здесь гарантированно полетит массив чисел, например: [12, 18, 25, 14...]
             ]
-        ]);
+        ], Response::HTTP_OK);
     }
 }

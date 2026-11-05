@@ -18,8 +18,24 @@ const chartData = ref({
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  layout: {
+    padding: {
+      left: 10,
+      right: 15,
+      top: 10,
+      bottom: 0
+    }
+  },
   plugins: {
-    legend: { display: false }
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#111827',
+      titleColor: '#94A3B8',
+      bodyColor: '#F3F4F6',
+      borderColor: '#334155',
+      borderWidth: 1,
+      font: { family: 'monospace' }
+    }
   },
   scales: {
     x: {
@@ -27,8 +43,13 @@ const chartOptions = {
       ticks: { color: '#94A3B8', font: { family: 'monospace', size: 11 } }
     },
     y: {
-      grid: { color: 'rgba(30, 41, 59, 0.5)' },
-      ticks: { color: '#94A3B8', font: { family: 'monospace', size: 11 }, precision: 0 }
+      grid: { color: 'rgba(30, 41, 59, 0.3)' },
+      ticks: {
+        color: '#94A3B8',
+        font: { family: 'monospace', size: 11 },
+        precision: 0,
+        beginAtZero: true // График всегда начинается с нуля
+      }
     }
   }
 }
@@ -125,8 +146,8 @@ onMounted(() => {
       </div>
 
       <!-- Graph container -->
-      <div class="h-80 w-full relative">
-        <div v-if="loading" class="absolute inset-0 flex items-center justify-between text-sm text-slate-400 font-medium bg-[#0B0F19]/10 backdrop-blur-xs z-10 justify-center">
+      <div class="relative w-full h-[320px] mt-6">
+        <div v-if="loading" class="absolute inset-0 flex items-center justify-center text-sm text-slate-400 font-mono bg-[#0B0F19]/50 backdrop-blur-xs z-10">
           Loading metrics from the Symfony API...
         </div>
 
@@ -136,7 +157,7 @@ onMounted(() => {
             :options="chartOptions"
         />
 
-        <div v-else-if="!loading" class="absolute inset-0 flex items-center justify-between text-sm text-slate-500 font-medium justify-center">
+        <div v-else-if="!loading" class="absolute inset-0 flex items-center justify-center text-sm text-slate-500 font-mono">
           There is no data available to generate a graph for the last 7 days.
         </div>
       </div>
