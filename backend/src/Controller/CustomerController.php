@@ -5,6 +5,7 @@ namespace OmniCore\Controller;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use OmniCore\Entity\Customer;
+use OmniCore\Repository\CustomerRepository;
 use OmniCore\Security\TenantContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -30,14 +31,28 @@ final class CustomerController extends AbstractController
     #[Route('', name: 'api_customers_list', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
-        if (!$this->tenantContext->getTenant()) {
+        $tenant = $this->tenantContext->getTenant();
+
+        if (!$tenant) {
             return new JsonResponse(['error' => 'Unauthorized tenant context'], Response::HTTP_UNAUTHORIZED);
         }
 
+        // Extract filtration parameters (?city=Kharkiv&age=25&tag=VIP)
+        $filters = [
+            'city' => $request->query->get('city'),
+            'age' => $request->query->get('age'),
+            'tag' => $request->query->get('tag'),
+        ];
+
+        // Exclude blank and null values
+        $filters = array_filter($filters, fn($value) => $value !== null && $value !== '');
+
+        /** @var CustomerRepository $repository */
         $repository = $this->entityManager->getRepository(Customer::class);
 
-        // As a result of this query, we get the latest 50 customers ONLY for the CURRENT tenant.
-        $customers = $repository->findBy(['tenant' => $this->tenantContext->getTenant()], ['createdAt' => 'DESC'], limit: 50);
+        // Get filtered customers tied to current Tenant
+        $customers = $repository->findFilteredForTenant($tenant, $filters);
+
         $jsonContent = $this->serializer->serialize($customers, 'json', [
             'ignored_attributes' => ['tenant'] // Exclude the cyclical reference to 'tenant' field
         ]);
@@ -66,24 +81,29 @@ final class CustomerController extends AbstractController
                 TO_CHAR(c.created_at, 'YYYY-MM-DD') as date_label,
                 COUNT(c.id) as total_count
             FROM customers c
-            WHERE c.tenant_id = :tenant_id
+            WHERE c.tenant_id = CAST(:tenant_id AS uuid)
                 AND c.created_at >= NOW() - INTERVAL '7 days'
             GROUP BY date_label
             ORDER BY date_label ASC
         ";
 
-        $result = $connection->fetchAllAssociative($sql, [
-            'tenant_id' => $tenant->getId()->toString()
-        ]);
+        try {
+            $result = $connection->fetchAllAssociative($sql, [
+                'tenant_id' => $tenant->getId()->toString()
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'error' => 'Database Query Execution Failed',
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
 
-        // Инициализируем чистые массивы под оси графика
         $labels = [];
         $values = [];
 
         foreach ($result as $row) {
-            // ИСПОЛЬЗУЕМ КВАДРАТНЫЕ СКОБКИ [] ДЛЯ ДОБАВЛЕНИЯ В КОНЕЦ МАССИВА
-            $labels[] = $row['date_label'] ?? $row['DATE_LABEL'];
-            $values[] = (int) ($row['total_count'] ?? $row['TOTAL_COUNT'] ?? 0);
+            $labels[] = $row['date_label'] ?? '';
+            $values[] = (int) ($row['total_count'] ?? 0);
         }
 
         return new JsonResponse([
@@ -94,7 +114,7 @@ final class CustomerController extends AbstractController
             ],
             'chart' => [
                 'labels' => $labels,
-                'data' => $values // Теперь здесь гарантированно полетит массив чисел, например: [12, 18, 25, 14...]
+                'data' => $values
             ]
         ], Response::HTTP_OK);
     }

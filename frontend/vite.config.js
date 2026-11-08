@@ -15,7 +15,14 @@ export default defineConfig({
         target: 'http://localhost:8000', // Local port for Symfony API backend
         changeOrigin: true,
         secure: false,
-        ws: false
+        ws: false,
+        timeout: 60000,
+        proxyTimeout: 60000,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('Proxy error logged:', err.message);
+          });
+        }
       }
     }
   }

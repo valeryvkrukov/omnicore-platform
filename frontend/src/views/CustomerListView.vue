@@ -1,15 +1,29 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, reactive } from 'vue'
 import { useTenantStore } from '../store/tenant'
 
 const tenantStore = useTenantStore()
 const customers = ref([])
-const loading = ref(false)
+const isLoading = ref(false)
 
-const loadCustomers = async () => {
-  loading.value = true
+const filters = reactive({
+  city: '',
+  age: null,
+  tag: ''
+});
+
+const availableTags = ['VIP', 'Новый', 'Проблемный'];
+
+const fetchCustomers = async (filters = {}) => {
+  isLoading.value = true
   try {
-    const response = await fetch('/api/v1/customers', {
+    const params = new URLSearchParams();
+
+    if (filters.city) params.append('city', filters.city);
+    if (filters.age) params.append('age', filters.age);
+    if (filters.tag) params.append('tag', filters.tag);
+
+    const response = await fetch(`/api/v1/customers?${params.toString()}`, {
       method: 'GET',
       headers: tenantStore.apiHeaders
     })
@@ -20,9 +34,14 @@ const loadCustomers = async () => {
   } catch (error) {
     console.error('Error retrieving the list of customers:', error)
   } {
-    loading.value = false
+    isLoading.value = false
   }
 }
+
+const toggleTag = (tag) => {
+  filters.tag = filters.tag === tag ? '' : tag;
+  fetchCustomers();
+};
 
 // Formatting complex JSONB values (arrays, objects) for output in tag
 const formatJsonValue = (value) => {
@@ -43,11 +62,11 @@ const formatDate = (dateStr) => {
 
 // Reload customers list when tenant changes
 watch(() => tenantStore.currentTenantId, () => {
-  loadCustomers()
+  fetchCustomers()
 })
 
 onMounted(() => {
-  loadCustomers()
+  fetchCustomers()
 })
 </script>
 
@@ -62,15 +81,15 @@ onMounted(() => {
         </p>
       </div>
       <button
-          @click="loadCustomers"
+          @click="fetchCustomers"
           class="text-xs font-semibold bg-slate-900 border border-slate-800 hover:border-indigo-500/50 text-slate-300 px-4 py-2 rounded-lg transition-all active:scale-95"
       >
-        🔄 Обновить список
+        🔄 Refresh list
       </button>
     </div>
 
     <!-- Loading indicator -->
-    <div v-if="loading" class="py-20 text-center text-sm text-slate-400 font-mono tracking-wide animate-pulse">
+    <div v-if="isLoading" class="py-20 text-center text-sm text-slate-400 font-mono tracking-wide animate-pulse">
       Executing an isolated SQL query against PostgreSQL...
     </div>
 

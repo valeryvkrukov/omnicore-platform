@@ -25,6 +25,9 @@ doctrine:
             tenant_filter:
                 class: OmniCore\Filter\TenantFilter
                 enabled: true
+        dql:
+            string_functions:
+                JSON_GET_TEXT: OmniCore\Doctrine\DBAL\JsonGetText
 
 when@test:
     doctrine:
