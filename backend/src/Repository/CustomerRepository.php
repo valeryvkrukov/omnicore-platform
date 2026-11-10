@@ -45,8 +45,9 @@ class CustomerRepository extends ServiceEntityRepository
         }
 
         if (!empty($filters['tag'])) {
-            $sql .= " AND c.properties ->> 'tags' LIKE :tag";
+            $sql .= " AND (c.properties ->> 'tags' LIKE :tag OR c.properties ->> 'tags' LIKE :tag_json)";
             $params['tag'] = '%' . $filters['tag'] . '%';
+            $params['tag_json'] = '%"' . $filters['tag'] . '"%';
         }
 
         $sql .= " ORDER BY c.created_at DESC LIMIT 50";

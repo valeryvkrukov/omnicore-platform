@@ -4,6 +4,7 @@ namespace OmniCore\Command;
 
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Random\RandomException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -26,15 +27,16 @@ class SeedLargeCustomersCommand extends Command
 
     /**
      * @throws Exception
+     * @throws \DateMalformedStringException
+     * @throws RandomException
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
         $connection = $this->entityManager->getConnection();
 
-        // 1. Get ID of existing test tenant
-        $tenantId = $connection->fetchOne('SELECT id FROM tenants LIMIT 1');
-        if (!$tenantId) {
+        $tenantIdList = $connection->fetchAllAssociative('SELECT id FROM tenants');
+        if (!$tenantIdList) {
             $io->error('No tenants found in the database. Please seed tenants first.');
             return Command::FAILURE;
         }
@@ -43,7 +45,7 @@ class SeedLargeCustomersCommand extends Command
         $cities = ['Kharkiv', 'Kyiv', 'Lviv', 'Odessa', 'Dnipro'];
         $tagsPool = ['VIP', 'New', 'Problematic', 'Active', 'Archive'];
 
-        $totalRecords = 15000; // Generate 15,000 records
+        $totalRecords = 15000;
         $batchSize = 2000;
         $inserted = 0;
 
@@ -59,24 +61,25 @@ class SeedLargeCustomersCommand extends Command
 
                 // Build random tags array
                 $randomTags = [];
-                for ($t = 0; $t < rand(1, 3); $t++) {
+                for ($t = 0; $t < rand(1, 2); $t++) {
                     $randomTags[] = $tagsPool[array_rand($tagsPool)];
                 }
-                $tagsString = implode(', ', array_unique($randomTags));
+                $randomTags = array_values(array_unique($randomTags));
 
                 // Build valid JSON-properties
                 $properties = json_encode([
                     'city' => $randomCity,
                     'age' => $randomAge,
-                    'tags' => $tagsString,
+                    'tags' => $randomTags
                 ]);
 
                 $rows[] = sprintf(
-                    "('%s', 'customer_%s@omnicore.io', '%s', '%s', NOW())",
+                    "('%s', 'customer_%s@omnicore.io', '%s', '%s', '%s')",
                     Uuid::v7()->toRfc4122(),
                     uniqid('user_', true),
                     $properties,
-                    $tenantId
+                    $tenantIdList[mt_rand(0, count($tenantIdList) - 1)]['id'],
+                    new \DateTimeImmutable('@' . mt_rand(strtotime('-1 week 00:00:00'), time()))->format('Y-m-d H:i:s')
                 );
             }
 

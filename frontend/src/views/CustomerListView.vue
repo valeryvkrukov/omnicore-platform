@@ -3,10 +3,12 @@ import { ref, onMounted, watch } from 'vue';
 import { useTenantStore } from '../store/tenant';
 import CustomerFilters from '../components/CustomerFilters.vue';
 import CustomerTable from '../components/CustomerTable.vue';
+import CreateCustomerModal from '../components/CreateCustomerModal.vue';
 
 const tenantStore = useTenantStore();
 const customers = ref([]);
 const isLoading = ref(false);
+const isModalOpen = ref(false);
 
 let currentFilters = {};
 
@@ -52,6 +54,13 @@ onMounted(() => {
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-bold tracking-tight text-gray-100">Platform client registry</h1>
+      <!-- Add customer button -->
+      <button
+        @click="isModalOpen = true"
+        class="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)] transition"
+      >
+        ➕ New Customer
+      </button>
     </div>
 
     <!-- Filters component -->
@@ -59,5 +68,12 @@ onMounted(() => {
 
     <!-- Customer table -->
     <CustomerTable :customers="customers" :is-loading="isLoading" />
+
+    <!-- Create customer modal -->
+    <CreateCustomerModal
+      :is-open="isModalOpen"
+      @close="isModalOpen = false"
+      @created="fetchCustomers"
+    />
   </div>
 </template>

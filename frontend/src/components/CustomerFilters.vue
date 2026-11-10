@@ -34,6 +34,7 @@ const fetchMetadata = async () => {
     }
 
     const data = await response.json();
+    console.log('OmniCore Filter Meta Sync:', data);
     availableCities.value = data.cities || [];
     availableTags.value = data.tags || [];
   } catch (error) {
@@ -107,7 +108,7 @@ onMounted(() => {
           <span class="text-[11px] font-medium tracking-wider text-gray-400 uppercase mb-1.5">Quick Tags</span>
           <div class="flex flex-wrap gap-2">
             <span v-if="isLoadingMeta" class="text-xs text-gray-500 py-1.5">Loading tags...</span>
-            <span v-else-if="availableTags.length === 0" class="text-xs text-gray-500 py-1.5">No active tags</span>
+            <span v-else-if="!availableTags || availableTags.length === 0" class="text-xs text-gray-500 py-1.5">No active tags</span>
             <button
               v-else
               v-for="tag in availableTags"

@@ -44,9 +44,18 @@ defineProps({
               {{ customer.properties?.age ? `${customer.properties.age} years` : '—' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+              <div v-if="Array.isArray(customer.properties?.tags) && customer.properties.tags.length > 0" class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="tag in customer.properties.tags"
+                  :key="tag"
+                  class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                >
+                  {{ tag }}
+                </span>
+              </div>
               <span
-                v-if="customer.properties?.tags"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                v-else-if="typeof customer.properties?.tags === 'string' && customer.properties.tags !== ''"
+                class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
               >
                 {{ customer.properties.tags }}
               </span>

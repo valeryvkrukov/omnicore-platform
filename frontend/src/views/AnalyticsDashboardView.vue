@@ -20,10 +20,13 @@ const loadDashboardData = async (filters = {}) => {
       headers: tenantStore.apiHeaders
     });
 
-    const analyticsData = await analyticsRes.json();
-
-    chartData.value = analyticsData.chart;
-    metrics.value = analyticsData.metrics;
+    if (analyticsRes.ok) {
+      const analyticsData = await analyticsRes.json();
+      chartData.value = analyticsData.chart || { labels: [], data: [] };
+      metrics.value = analyticsData.metrics || { total_customers: 0, current_plan: 'free' };
+    } else {
+      console.warn('Analytics endpoint returns error, chart temporary is unavailable.');
+    }
 
     // 2. Update synchronously list of clients by JSONB filters selected in UI
     const params = new URLSearchParams();
@@ -34,7 +37,10 @@ const loadDashboardData = async (filters = {}) => {
     const customersRes = await fetch(`/api/v1/customers?${params.toString()}`, {
       headers: tenantStore.apiHeaders
     });
-    customers.value = await customersRes.json();
+
+    if (customersRes.ok) {
+      customers.value = await customersRes.json();
+    }
   } catch (error) {
     console.error('Dashboard synchronization failed:', error);
   } finally {

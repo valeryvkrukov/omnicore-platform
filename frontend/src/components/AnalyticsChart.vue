@@ -37,6 +37,11 @@ let chartInstance = null;
 const renderChart = () => {
   if (!canvasRef.value) return;
 
+  // Prevent for building blank chart, wait till fetch data from backend
+  if (!props.chartValues.labels || props.chartValues.labels.length === 0) {
+    return;
+  }
+
   if (chartInstance) {
     chartInstance.destroy();
   }
