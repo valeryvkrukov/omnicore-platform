@@ -28,10 +28,10 @@ class CustomerRepository extends ServiceEntityRepository
 
         $sql = "SELECT " . $rsm->generateSelectClause() . "
                 FROM customers c
-                WHERE c.tenant_id = :tenant_id";
+                WHERE c.tenant_id = CAST(:native_tenant_id AS uuid)";
 
         $params = [
-            'tenant_id' => $tenant->getId()->toString()
+            'native_tenant_id' => $tenant->getId()->toString()
         ];
 
         if (!empty($filters['city'])) {
@@ -51,36 +51,25 @@ class CustomerRepository extends ServiceEntityRepository
 
         $sql .= " ORDER BY c.created_at DESC LIMIT 50";
 
+        $filtersManager = $this->getEntityManager()->getFilters();
+        $filterEnabled = $filtersManager->isEnabled('tenant_filter');
+
+        if ($filterEnabled) {
+            $filtersManager->disable('tenant_filter');
+        }
+
         $query = $this->getEntityManager()->createNativeQuery($sql, $rsm);
         foreach ($params as $key => $value) {
             $query->setParameter($key, $value);
         }
 
-        return $query->getResult();
+        $result = $query->getResult();
 
-        /*$qb = $this->createQueryBuilder('c')
-            ->where('c.tenant = :tenant')
-            ->setParameter('tenant', $tenant)
-            ->orderBy('c.createdAt', 'DESC')
-            ->setMaxResults(50);
-
-        if (!empty($filters['city'])) {
-            $qb->andWhere("JSON_GET_TEXT(c.customFields, 'city') = :city")
-                ->setParameter('city', $filters['city']);
+        if ($filterEnabled) {
+            $filtersManager->enable('tenant_filter');
         }
 
-        if (!empty($filters['age'])) {
-            $qb->andWhere("JSON_GET_TEXT(c.customFields, 'age') = :age")
-                ->setParameter('age', (string)$filters['age']);
-        }
-
-        if (!empty($filters['tag'])) {
-            // If JSONB contains tags as a string or substring
-            $qb->andWhere("JSON_GET_TEXT(c.customFields, 'tag') LIKE :tag")
-                ->setParameter('tag', '%' . $filters['tag'] . '%');
-        }
-
-        return $qb->getQuery()->getResult();*/
+        return $result;
     }
 
 }

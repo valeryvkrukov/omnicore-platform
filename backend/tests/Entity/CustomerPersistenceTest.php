@@ -52,6 +52,13 @@ class CustomerPersistenceTest extends KernelTestCase
         ]);
         $this->entityManager->persist($customer);
 
+        $this->entityManager->getFilters()
+            ->enable('tenant_filter')
+            ->setParameter(
+                'tenant_id',
+                $tenant->getId()->toString()
+            );
+
         $this->entityManager->flush();
         $this->entityManager->clear();
 

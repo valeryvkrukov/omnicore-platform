@@ -18,8 +18,14 @@ class TenantFilter extends SQLFilter
             return '';
         }
 
+        try {
+            $tenantId = $this->getParameter('tenant_id');
+        } catch (\InvalidArgumentException) {
+            return '';
+        }
+
         // Return native PostgreSQL SQL condition.
         // Parameter 'tenant_id' will be dynamically passed from the query context.
-        return sprintf('%s.tenant_id = %s::uuid', $targetTableAlias, $this->getParameter('tenant_id'));
+        return sprintf('%s.tenant_id = %s::uuid', $targetTableAlias, $tenantId);
     }
 }

@@ -78,7 +78,10 @@ class SeedDataCommand extends Command
 
                 for ($i = 0; $i < $registrationsCount; $i++) {
                     $customer = new Customer($tenant);
-                    $customer->setEmail(sprintf('user_%d_%d@%s.test', $day, $i, strtolower(str_replace(' ', '', $tenant->getName()))));
+                    str_replace(' ', '', $tenant->getName())
+                        |> strtolower(...)
+                        |> (fn($x) => sprintf('user_%d_%d@%s.test', $day, $i, $x))
+                        |> $customer(...);
 
                     // Constructing a diverse JSONB metadata structure
                     $customer->setProperties([

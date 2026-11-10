@@ -118,4 +118,69 @@ final class CustomerController extends AbstractController
             ]
         ], Response::HTTP_OK);
     }
+
+    /**
+     * Returns list of unique cities and tags currently present in custom JSONB fields for the tenant.
+     * @throws Exception
+     */
+    #[Route('/filter-meta', name: 'app_customers_filter_meta', methods: ['GET'])]
+    public function getFilterMetadata(): JsonResponse
+    {
+        $tenant = $this->tenantContext->getTenant();
+        if (!$tenant) {
+            return new JsonResponse([
+                'error' => 'Unauthorized tenant context'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $connection = $this->entityManager->getConnection();
+
+        // High efficient select of unique cities from JSONB with tenant restriction
+        // Query utilizes the index created by us on the expression
+        $citiesSql = "
+            SELECT DISTINCT (properties ->> 'city') AS city
+            FROM customers
+            WHERE tenant_id = CAST(:tenantId AS UUID)
+                AND properties ->> 'city' IS NOT NULL
+            ORDER BY city ASC
+        ";
+
+        $citiesResult = $connection->fetchAllAssociative($citiesSql, [
+            'tenantId' => $tenant->getId()->toString()
+        ]);
+
+        $cities = array_filter(array_column($citiesResult, 'city'));
+
+        // Select all presented tags (if they are presented as a string or array)
+        // To simplify fetch unique strings, will be parsed on frontend
+        $tagsSql = "
+            SELECT DISTINCT (properties ->> 'tags') AS tags
+            FROM customers
+            WHERE tenant_id = CAST(:tenantId AS UUID)
+                AND properties ->> 'tags' IS NOT NULL
+        ";
+
+        $tagsResult = $connection->fetchAllAssociative($tagsSql, [
+            'tenantId' => $tenant->getId()->toString()
+        ]);
+
+        $tags = [];
+        foreach ($tagsResult as $row) {
+            $rawTags = $row['tags'];
+            $cleanTags = str_replace(['[', ']', '"', "'"], '', $rawTags);
+            $exploded = explode(',', $cleanTags);
+
+            foreach ($exploded as $tag) {
+                if (!empty($tag)) {
+                    $tags[] = $tag;
+                }
+            }
+        }
+        $tags = array_values(array_unique($tags));
+
+        return new JsonResponse([
+            'cities' => $cities,
+            'tags' => $tags
+        ], Response::HTTP_OK);
+    }
 }
