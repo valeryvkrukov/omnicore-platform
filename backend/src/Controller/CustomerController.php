@@ -107,6 +107,7 @@ final class CustomerController extends AbstractController
         }
 
         $connection = $this->entityManager->getConnection();
+        $tenantId = $tenant->getId()->toString();
 
         // Native SQL query for PostgreSQL:
         // Aggregate number of customers registered by days on lastest week
@@ -121,10 +122,20 @@ final class CustomerController extends AbstractController
             ORDER BY date_label ASC
         ";
 
+        $citiesSql = "
+            SELECT
+                COALESCE(NULLIF(c.properties ->> 'city', ''), 'Not specified') as city_label,
+                COUNT(c.id) as city_count
+            FROM customers c
+            WHERE c.tenant_id = CAST(:tenant_id AS uuid)
+            GROUP BY city_label
+            ORDER BY city_count DESC
+            LIMIT 6
+        ";
+
         try {
-            $result = $connection->fetchAllAssociative($sql, [
-                'tenant_id' => $tenant->getId()->toString()
-            ]);
+            $result = $connection->fetchAllAssociative($sql, ['tenant_id' => $tenantId]);
+            $citiesResult = $connection->fetchAllAssociative($citiesSql, ['tenant_id' => $tenantId]);
         } catch (\Exception $e) {
             return new JsonResponse([
                 'error' => 'Database Query Execution Failed',
@@ -140,6 +151,14 @@ final class CustomerController extends AbstractController
             $values[] = (int) ($row['total_count'] ?? 0);
         }
 
+        $cityLabels = [];
+        $cityValues = [];
+
+        foreach ($citiesResult as $row) {
+            $cityLabels[] = $row['city_label'] ?? 'Не указан';
+            $cityValues[] = (int) ($row['city_count'] ?? 0);
+        }
+
         return new JsonResponse([
             'metrics' => [
                 'total_customers' => array_sum($values),
@@ -149,6 +168,10 @@ final class CustomerController extends AbstractController
             'chart' => [
                 'labels' => $labels,
                 'data' => $values
+            ],
+            'cities_chart' => [
+                'labels' => $cityLabels,
+                'data' => $cityValues
             ]
         ], Response::HTTP_OK);
     }

@@ -4,9 +4,11 @@ import { useTenantStore } from '../store/tenant';
 import CustomerFilters from '../components/CustomerFilters.vue';
 import CustomerTable from '../components/CustomerTable.vue';
 import AnalyticsChart from '../components/AnalyticsChart.vue';
+import CityDistributionChart from '../components/CityDistributionChart.vue';
 
 const tenantStore = useTenantStore();
 const chartData = ref({ labels: [], data: [] });
+const citiesChartData = ref({ labels: [], data: [] });
 const metrics = ref({ total_customers: 0, current_plan: 'free' });
 const customers = ref([]);
 const isLoading = ref(false);
@@ -23,6 +25,7 @@ const loadDashboardData = async (filters = {}) => {
     if (analyticsRes.ok) {
       const analyticsData = await analyticsRes.json();
       chartData.value = analyticsData.chart || { labels: [], data: [] };
+      citiesChartData.value = analyticsData.cities_chart || { labels: [], data: [] };
       metrics.value = analyticsData.metrics || { total_customers: 0, current_plan: 'free' };
     } else {
       console.warn('Analytics endpoint returns error, chart temporary is unavailable.');
@@ -75,10 +78,18 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- ANALYTICS CHART -->
-    <div class="p-5 bg-[#111827]/40 border border-gray-800 rounded-xl shadow-lg">
-      <h2 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">Registrations chronology (last week)</h2>
-      <AnalyticsChart :chart-values="chartData" />
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- ANALYTICS CHART -->
+      <div class="lg:col-span-2 p-5 bg-[#111827]/40 border border-gray-800 rounded-xl shadow-lg">
+        <h2 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">Registrations chronology (last week)</h2>
+        <AnalyticsChart :chart-values="chartData" />
+      </div>
+
+      <!-- DOUGHNUT CITIES CHART -->
+      <div class="p-5 bg-[#111827]/40 border border-gray-800 rounded-xl shadow-lg">
+        <h2 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">Client Locations (JSONB)</h2>
+        <CityDistributionChart :chart-values="citiesChartData" />
+      </div>
     </div>
 
     <!-- INTERACTIVE FILTER -->
