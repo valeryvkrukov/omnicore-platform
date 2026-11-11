@@ -81,7 +81,7 @@ class SeedDataCommand extends Command
                     str_replace(' ', '', $tenant->getName())
                         |> strtolower(...)
                         |> (fn($x) => sprintf('user_%d_%d@%s.test', $day, $i, $x))
-                        |> $customer(...);
+                        |> $customer->setEmail(...);
 
                     // Constructing a diverse JSONB metadata structure
                     $customer->setProperties([

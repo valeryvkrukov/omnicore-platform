@@ -30,7 +30,13 @@ echo -e "\n✅ PostgreSQL is fully ready for operation!"
 # 4. Warming up the Symfony backend directly in the PHP container
 echo "⚙️  Clearing the Symfony cache and checking migrations..."
 docker compose exec -T php php bin/console cache:clear --env=dev
-docker compose exec -T php php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration || true
+docker compose exec -T php php bin/console doctrine:migrations:migrate OmniCore\\Migrations\\Version20261102111033 --no-interaction --allow-no-migration || true
+docker compose exec -T php php bin/console doctrine:migrations:migrate OmniCore\\Migrations\\Version20261108130630 --no-interaction --allow-no-migration || true
+
+# 5. Fill the test data
+echo "⚙️  Fill the test data by using omnicore:seed-large-customers command..."
+docker compose exec -T php php bin/console omnicore:seed-data
+docker compose exec -T php php bin/console omnicore:seed-large-customers
 
 echo "=== 🎉 Infrastructure has been successfully deployed! ==="
 echo "🔗 The backend is available at: http://127.0.0.1:8000"
